@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galactic Strike</title>
+    <link rel="icon" type="Galactic shooter.jpg" href="Galactic shooter.jpg">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f0f0;
+        }
+        canvas {
+            display: block;
+            background-color: #d4f1f4;
+            border: 5px solid #333;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+        .game-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .game-title {
+            font-size: 36px;
+            font-weight: bold;
+            color: #333;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        .start-button {
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            background-color: #333;
+            border: none;
+            cursor: pointer;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            margin-top: 20px;
+        }
+        .start-button:hover {
+            background-color: #555;
+        }
+        .game-info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #333;
+            font-weight: bold;
+            font-size: 18px;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+        }
+        .game-info .high-score {
+            font-size: 20px;
+            color: black;
+            margin-top: 10px;
+        }
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        .control-button {
+            width: 60px;
+            height: 60px;
+            background-color: #333;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            line-height: 60px;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .control-button:active {
+            background-color: #555;
+        }
+        .pause-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            background-color: #333;
+            border: none;
+            cursor: pointer;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .pause-button:hover {
+            background-color: #555;
+        }
+
+        .game-over-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 30px;
+            border-radius: 10px;
+            color: white;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+            width: 300px; /* Set a fixed width for the container */
+        }
+
+        .game-over-text {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .score-info {
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+
+        .score-info div {
+            margin: 5px 0;
+        }
+
+        .retry-button {
+            padding: 15px 30px;
+            font-size: 18px;
+            color: white;
+            background-color: #333;
+            border: none;
+            cursor: pointer;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .retry-button:hover {
+            background-color: #555;
+        }
+
+
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-title">Galactic Strike</div>
+        <p>Created by Shahin Shadi CK</p>
+        <button class="start-button" id="startButton">Start Game</button>
+    </div>
+    
+    <!-- Game Over Screen -->
+    <div class="game-over-container" id="gameOverContainer" style="display: none;">
+        <div class="game-over-text">Game Over!</div>
+        <div class="score-info">
+            <div>Score: <span id="finalScore">0</span></div>
+            <div>High Score: <span id="finalHighScore">0</span></div>
+        </div>
+        <button class="retry-button" id="retryButton">Retry</button>
+    </div>
+    
+    
+    
+    <div class="game-info" id="gameInfo" style="display: none;">
+        <div>Score: <span id="currentScore">0</span></div>
+        <div class="high-score">High Score: <span id="highScore">0</span></div>
+    </div>
+    
+    <canvas id="gameCanvas" style="display: none;"></canvas>
+    
+    <div class="controls" id="controls" style="display: none;">
+        <div class="control-button" id="leftButton">◀</div>
+        <div class="control-button" id="rightButton">▶</div>
+    </div>
+    <button class="pause-button" id="pauseButton" style="display: none;">Pause</button>
+    
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startButton = document.getElementById('startButton');
+        const gameInfo = document.getElementById('gameInfo');
+        const currentScoreElement = document.getElementById('currentScore');
+        const highScoreElement = document.getElementById('highScore');
+        const controls = document.getElementById('controls');
+        const leftButton = document.getElementById('leftButton');
+        const rightButton = document.getElementById('rightButton');
+        const pauseButton = document.getElementById('pauseButton');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const playerImage = new Image(); // Create a new image object
+        playerImage.src = 'shooter.png'; // Set the image source (replace with your image path)
+
+
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height - 70,
+            width: 40, // Adjust according to image size
+            height: 40, // Adjust according to image size
+            speed: 10,
+            bullets: [],
+            shootCooldown: 0
+        };
+
+        const enemies = [];
+        const enemySize = 30;
+        const enemySpeed = 3;
+        let score = 0;
+        let highScore = localStorage.getItem('highScore') || 0;
+        let isGameRunning = false;
+        let isPaused = false;
+
+        let isMovingLeft = false;
+        let isMovingRight = false;
+
+        let spawnInterval;
+        let spawnRate = 1000; // Initial spawn interval (1 second)
+
+        function drawPlayer() {
+            ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
+        }
+
+
+
+
+        function drawBullets() {
+            ctx.fillStyle = 'red';
+            player.bullets.forEach((bullet, bulletIndex) => {
+                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+                bullet.y -= bullet.speed;
+
+                if (bullet.y < 0.05) {
+                    player.bullets.splice(bulletIndex, 0.5);
+                }
+            });
+        }
+
+        function drawEnemies() {
+            ctx.fillStyle = 'green';
+            enemies.forEach((enemy, enemyIndex) => {
+                ctx.fillRect(enemy.x, enemy.y, enemySize, enemySize);
+                enemy.y += enemySpeed;
+
+                if (enemy.y > canvas.height) {
+                    endGame();
+                }
+
+                player.bullets.forEach((bullet, bulletIndex) => {
+                    if (
+                        bullet.x < enemy.x + enemySize &&
+                        bullet.x + bullet.width > enemy.x &&
+                        bullet.y < enemy.y + enemySize &&
+                        bullet.y + bullet.height > enemy.y
+                    ) {
+                        player.bullets.splice(bulletIndex, 1);
+                        enemies.splice(enemyIndex, 1);
+                        score += 10;
+                        currentScoreElement.textContent = score;
+                    }
+                });
+            });
+        }
+
+        function spawnEnemy() {
+            const x = Math.random() * (canvas.width - enemySize);
+            enemies.push({ x, y: 0 });
+        }
+
+        function shoot() {
+            if (player.shootCooldown <= 0) {
+                player.bullets.push({
+                    x: player.x + player.width / 2 - 5,
+                    y: player.y,
+                    width: 5,
+                    height: 15,
+                    speed: 5
+                });
+                player.shootCooldown = 10; // Set cooldown (15 frames between shots)
+            }
+        }
+
+
+function update() {
+    if (!isGameRunning || isPaused) return;
+
+    if (isMovingLeft) player.x = Math.max(player.x - player.speed, 0);
+    if (isMovingRight) player.x = Math.min(player.x + player.speed, canvas.width - player.width);
+
+    player.shootCooldown--; // Decrease shoot cooldown over time
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    drawPlayer();
+    drawBullets();
+    drawEnemies();
+
+    shoot(); // Call shoot continuously
+
+    // Only change spawn rate if the game is running and score is 50 or more
+    if (score >= 50 && spawnRate > 500) {
+        // Increase spawn speed after score reaches 50
+        spawnRate = 500; // Reduce spawn interval (faster spawn)
+        clearInterval(spawnInterval);
+        spawnInterval = setInterval(spawnEnemy, spawnRate); // Update spawn interval
+    }
+
+    requestAnimationFrame(update);
+}
+
+function startGame() {
+    score = 0;
+    currentScoreElement.textContent = score;
+    highScoreElement.textContent = highScore;
+    player.bullets = [];
+    enemies.length = 0;
+    player.shootCooldown = 0;
+
+    // Position the shooter above the controls
+    const controlsHeight = controls.offsetHeight || 100; // Get the height of the controls
+    player.y = canvas.height - controlsHeight - player.height - 10; // 10px gap for spacing
+
+    spawnRate = 1000; // Reset spawn rate to initial value
+    isGameRunning = true;
+
+    // Hide the main menu and show game elements
+    document.querySelector('.game-container').style.display = 'none';
+    gameInfo.style.display = 'block';
+    controls.style.display = 'flex';
+    canvas.style.display = 'block';
+    gameOverContainer.style.display = 'none'; // Hide game over screen
+
+    // Show and style the pause button
+    pauseButton.style.display = 'block';
+    pauseButton.textContent = 'Pause'; // Use the text 'Pause'
+    pauseButton.style.fontSize = '16px'; // Font size for the text
+    pauseButton.style.width = '100px'; // Button width
+    pauseButton.style.height = '40px'; // Button height
+    pauseButton.style.borderRadius = '5px'; // Slightly rounded corners
+    pauseButton.style.backgroundColor = '#333'; // Button background color
+    pauseButton.style.color = 'white'; // Text color
+    pauseButton.style.fontWeight = 'bold'; // Bold font for visibility
+    pauseButton.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)'; // Button shadow
+    pauseButton.style.position = 'absolute'; // Position the button
+    pauseButton.style.top = '10px'; // Place it at the top
+    pauseButton.style.right = '10px'; // Place it at the right
+
+    // Center the text using flexbox
+    pauseButton.style.display = 'flex';
+    pauseButton.style.justifyContent = 'center';
+    pauseButton.style.alignItems = 'center';
+
+    // Start spawning enemies and updating the game
+    spawnInterval = setInterval(spawnEnemy, spawnRate);
+    update();
+}
+
+
+        function endGame() {
+            isGameRunning = false;
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('highScore', highScore);
+            }
+
+            // Show the game over screen
+            document.querySelector('.game-container').style.display = 'none';
+            gameInfo.style.display = 'none';
+            controls.style.display = 'none';
+            canvas.style.display = 'none';
+            gameOverContainer.style.display = 'block'; // Show the game over container
+
+            pauseButton.style.display = 'none';
+
+
+            // Update the score and high score on the game over screen
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('finalHighScore').textContent = highScore;
+
+            clearInterval(spawnInterval); // Stop spawning enemies
+        }
+
+
+
+        function togglePause() {
+            isPaused = !isPaused;
+            if (isPaused) {
+                pauseButton.textContent = 'Resume';
+            } else {
+                pauseButton.textContent = 'Pause';
+                update(); // Resume the game
+            }
+        }
+
+                const retryButton = document.getElementById('retryButton');
+        retryButton.addEventListener('click', () => {
+            // Hide game over screen and restart game
+            gameOverContainer.style.display = 'none';
+            startGame(); // Restart the game
+        });
+
+
+        // Pause Button Click Event
+        pauseButton.addEventListener('click', togglePause);
+
+        // Touch Events for Mobile Movement
+        leftButton.addEventListener('touchstart', () => {
+            isMovingLeft = true;
+        });
+        rightButton.addEventListener('touchstart', () => {
+            isMovingRight = true;
+        });
+        leftButton.addEventListener('touchend', () => {
+            isMovingLeft = false;
+        });
+        rightButton.addEventListener('touchend', () => {
+            isMovingRight = false;
+        });
+
+        // Mouse Events for Desktop Movement
+        leftButton.addEventListener('mousedown', () => {
+            isMovingLeft = true;
+        });
+        rightButton.addEventListener('mousedown', () => {
+            isMovingRight = true;
+        });
+        leftButton.addEventListener('mouseup', () => {
+            isMovingLeft = false;
+        });
+        rightButton.addEventListener('mouseup', () => {
+            isMovingRight = false;
+        });
+
+        startButton.addEventListener('click', startGame);
+    </script>
+</body>
+</html>
